@@ -34,16 +34,7 @@ def find_touchpad_device():
                 if part.startswith("event"):
                     return f"/dev/input/{part}"
 
-    # Fallback: cherche dans libinput
-    result = subprocess.run(
-        ["libinput", "list-devices"],
-        capture_output=True, text=True
-    )
-    for line in result.stdout.split("\n"):
-        if "Touchpad" in line:
-            # Next line should have event
-            pass
-
+    # Fallback: try common event devices
     return None
 
 def read_touch_events(device_path: str):
