@@ -1,0 +1,20 @@
+{
+  "memory": {
+    "file": "/home/ego-bash/ear-to-code/organs/memory.py",
+    "description": "Example memory organ",
+    "created": "2026-01-17T17:01:52.386286",
+    "active": true
+  },
+  "emotion": {
+    "file": "/home/ego-bash/ear-to-code/organs/emotion.py",
+    "description": "Example emotion organ",
+    "created": "2026-01-17T17:01:52.523667",
+    "active": true
+  },
+  "intuition": {
+    "file": "/home/ego-bash/ear-to-code/organs/intuition.py",
+    "description": "Example intuition organ",
+    "created": "2026-01-17T17:01:52.658741",
+    "active": true
+  }
+}
