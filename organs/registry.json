@@ -16,5 +16,12 @@
     "description": "Example intuition organ",
     "created": "2026-01-17T17:01:52.658741",
     "active": true
+  },
+  "dna": {
+    "file": "/home/ego-bash/ear-to-code/organs/dna.py",
+    "description": "Bioinformatique - ADN, ARN, proteines, mutations, gematria genetique",
+    "created": "2026-01-17T17:22:07.787260",
+    "active": true,
+    "owner": "nyx"
   }
 }
