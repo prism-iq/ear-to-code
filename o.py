@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-o = rasoir
-pas de llm
-juste φ
+o = scalpel
+coupe précis
+φ
 """
 
 from god import PHI, hash_god, is_sacred
