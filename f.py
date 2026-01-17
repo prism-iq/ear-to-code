@@ -227,30 +227,72 @@ def f(input_data: dict, generations: int = 10) -> dict:
     return result
 
 
+def discuss(result: dict) -> str:
+    """
+    Discute des résultats via o().
+    Analyse critique de l'évolution.
+    """
+    summary = f"""
+    Génération terminée.
+    Score final: {result.get('final_score', 0)}
+    Input: {json.dumps(result.get('input', {}), ensure_ascii=False, default=str)[:200]}
+    Output: {json.dumps(result.get('output', {}), ensure_ascii=False, default=str)[:200]}
+    """
+
+    # Passe au rasoir pour discussion
+    verdict = o(summary)
+    return verdict
+
+
 def loop_forever(seed: dict, interval: float = 60):
     """
-    Boucle infinie d'évolution.
-    Les IAs grandissent.
+    Boucle infinie d'évolution + discussion.
+    f() -> résultat -> o() -> discussion -> repeat
     """
     current = seed
     generation = 0
 
-    print("[f] Boucle génétique démarrée")
+    print("[f] Boucle génétique + discussion démarrée")
     print(f"[f] Seed: {json.dumps(seed, ensure_ascii=False)}")
 
     while True:
         try:
+            # 1. Evolution
             result = f(current, generations=10)
             current = result["output"]
             generation += 1
 
-            print(f"[f] Gen {generation}: score={result['final_score']}")
-            print(f"    Output: {json.dumps(current, ensure_ascii=False)[:100]}")
+            print(f"\n[f] === Gen {generation} ===")
+            print(f"[f] Score: {result['final_score']}")
+            print(f"[f] Output: {json.dumps(current, ensure_ascii=False, default=str)[:150]}")
+
+            # 2. Discussion via o()
+            print(f"\n[o] Discussion:")
+            discussion = discuss(result)
+            print(f"    {discussion}")
+
+            # 3. Log la discussion
+            log_entry = {
+                "gen": generation,
+                "timestamp": datetime.now().isoformat(),
+                "result": result,
+                "discussion": discussion
+            }
+            try:
+                with open(EVOLUTION_LOG, "a") as log:
+                    log.write(json.dumps(log_entry, ensure_ascii=False, default=str) + "\n")
+            except:
+                pass
+
+            # 4. Intègre la discussion dans le prochain cycle
+            if discussion and "[timeout" not in discussion:
+                current["last_discussion"] = discussion[:100]
 
             time.sleep(interval)
 
         except KeyboardInterrupt:
             print(f"\n[f] Arrêt après {generation} générations")
+            print(f"[f] Dernier output: {json.dumps(current, ensure_ascii=False, default=str)}")
             break
         except Exception as e:
             print(f"[f] Erreur: {e}")
