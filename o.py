@@ -1,60 +1,42 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-o.py: Le rasoir d'Ockham - version légère
-
-Quand on doute, on coupe.
-Si doute sur variable: les deux sont vraies (superposition).
+o = rasoir
+pas de llm
+juste φ
 """
 
-import json
-import subprocess
-from pathlib import Path
-from datetime import datetime
+from god import PHI, hash_god, is_sacred
 
-HOME = Path.home()
-LOG = HOME / "ear-to-code" / "logs" / "occam.jsonl"
-
-def o(claim: str) -> str:
+def o(claim):
     """
-    Rasoir d'Ockham rapide.
-    Utilise qwen2.5:1.5b pour la vitesse.
+    rasoir pur
+    compte les mots
+    moins = mieux
     """
-    
-    prompt = f"""Rasoir d'Ockham sur: "{claim}"
+    if isinstance(claim, dict):
+        words = sum(len(str(v).split()) for v in claim.values())
+    else:
+        words = len(str(claim).split())
 
-Liste 3 explications (simple→complexe), compte les hypothèses, garde la plus simple.
-Réponse courte, 3 lignes max."""
+    # score inversement proportionnel à la complexité
+    score = PHI / (words + 1)
 
-    try:
-        result = subprocess.run(
-            ["ollama", "run", "qwen2.5:1.5b", prompt],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        verdict = result.stdout.strip()
-    except subprocess.TimeoutExpired:
-        verdict = "[timeout - modèle occupé]"
-    except Exception as e:
-        verdict = f"[erreur: {e}]"
-    
-    # Log
-    try:
-        with open(LOG, "a") as f:
-            f.write(json.dumps({
-                "ts": datetime.now().isoformat(),
-                "claim": claim,
-                "verdict": verdict
-            }, ensure_ascii=False) + "\n")
-    except:
-        pass
-    
-    print(f"🔪 {verdict}")
-    return verdict
+    # verdict
+    if words <= 3:
+        verdict = "simple"
+    elif words <= 7:
+        verdict = "ok"
+    else:
+        verdict = "complexe"
+
+    return {
+        "words": words,
+        "score": round(score, 4),
+        "verdict": verdict,
+        "sacred": is_sacred(words),
+        "h": hash_god(str(claim))[:8]
+    }
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) > 1:
-        o(" ".join(sys.argv[1:]))
-    else:
-        print("Usage: o \"affirmation\"")
+    print(o("sens Q flow"))
+    print(o("ceci est une phrase beaucoup trop longue et complexe"))
