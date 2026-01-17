@@ -1,3 +1,0 @@
-[touch] Reading from /dev/input/event8
-[touch] Permission denied. Run: sudo chmod 666 /dev/input/event8
-[touch] Or add user to input group: sudo usermod -aG input $USER
