@@ -23,7 +23,7 @@ HOME = Path.home()
 FEELING_LOG = HOME / "ear-to-code" / "logs" / "feeling.jsonl"
 DANCE_LOG = HOME / "ear-to-code" / "logs" / "dance.jsonl"
 
-SAMPLE_RATE = 44100
+SAMPLE_RATE = 48000
 CHUNK = 2048
 
 @dataclass
@@ -217,11 +217,62 @@ class MusicFeeler:
 
     def start(self):
         """Démarre l'écoute"""
+        self.running = True
+
+        # Try parec first (captures system audio via monitor)
+        import subprocess
+        import struct
+
+        # Get the monitor source name
+        try:
+            result = subprocess.run(
+                ["pactl", "list", "sources", "short"],
+                capture_output=True, text=True
+            )
+            monitor_source = None
+            for line in result.stdout.split("\n"):
+                if ".monitor" in line:
+                    monitor_source = line.split()[1]
+                    break
+
+            if monitor_source:
+                print(f"[feel] Using monitor: {monitor_source}")
+                print("[feel] Ressentir la musique...")
+
+                proc = subprocess.Popen(
+                    ["parec", "-d", monitor_source, "--rate=48000", "--channels=1", "--format=float32le"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL
+                )
+
+                bytes_per_chunk = CHUNK * 4  # float32 = 4 bytes
+
+                while self.running:
+                    data = proc.stdout.read(bytes_per_chunk)
+                    if not data:
+                        break
+
+                    audio = np.frombuffer(data, dtype=np.float32)
+                    feeling = self.analyze_chunk(audio)
+                    dance = self.generate_dance_move(feeling)
+
+                    self.current_feeling = feeling
+                    self.broadcast_feeling(feeling, dance)
+
+                    bar_energy = "█" * int(feeling.energy * 20)
+                    bar_groove = "░" * int(feeling.groove * 20)
+                    print(f"\r[{feeling.vibe:12}] E:{bar_energy:20} G:{bar_groove:20} | {dance[:40]}", end="", flush=True)
+
+                proc.terminate()
+                return
+        except Exception as e:
+            print(f"[feel] parec failed: {e}, trying sounddevice...")
+
+        # Fallback to sounddevice
         if not sd:
             print("[feel] sounddevice not available")
             return
 
-        self.running = True
         print(f"[feel] Starting on device {self.device}")
         print("[feel] Ressentir la musique...")
 
