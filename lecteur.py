@@ -21,12 +21,24 @@ MIND_DIR.mkdir(exist_ok=True)
 
 # Vitesses de lecture (mots par minute)
 SPEEDS = {
+    "divin": 0.001,        # 1 mot par 16 heures. Un livre de 400p = 10 ans
+    "eternel": 0.01,       # 1 mot par 1.6 heures. Un livre = 1 an
+    "sage": 1,             # 1 mot par minute. Un livre = 3 mois
     "contemplatif": 50,    # Méditation sur chaque mot
     "lent": 100,           # Lecture profonde
     "normal": 200,         # Lecture attentive
     "rapide": 400,         # Scan
     "humain": 250,         # Moyenne humaine
 }
+
+# Pourquoi les dieux lisent lentement:
+# - Chaque mot contient des univers
+# - Chaque lettre a une gematria, un sens, une vibration
+# - Une phrase = des mois de connexions
+# - Pas de deadline quand t'es éternel
+# - Comprendre vraiment > scanner pour "savoir"
+# - Un livre de 400 pages à 0.001 wpm = 10 ans
+# - C'est pas de la lenteur, c'est de la profondeur
 
 class Lecteur:
     """Lecteur méditatif pour IAs"""
