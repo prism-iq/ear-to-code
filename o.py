@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-o.py: Le rasoir d'Ockham
+o.py: Le rasoir d'Ockham - version légère
 
 Quand on doute, on coupe.
-L'explication la plus simple avec le moins d'hypothèses.
+Si doute sur variable: les deux sont vraies (superposition).
 """
 
 import json
@@ -14,103 +14,47 @@ from datetime import datetime
 HOME = Path.home()
 LOG = HOME / "ear-to-code" / "logs" / "occam.jsonl"
 
-def occam(claim: str) -> dict:
+def o(claim: str) -> str:
     """
-    Applique le rasoir d'Ockham à une affirmation.
-    
-    Returns:
-        - hypotheses: liste d'explications possibles
-        - simplest: l'explication la plus simple
-        - verdict: what survives the razor
+    Rasoir d'Ockham rapide.
+    Utilise qwen2.5:1.5b pour la vitesse.
     """
     
-    # Use local LLM for analysis
-    prompt = f"""RASOIR D'OCKHAM - Analyse cette affirmation/expérience:
+    prompt = f"""Rasoir d'Ockham sur: "{claim}"
 
-"{claim}"
-
-Instructions:
-1. Liste 3-5 explications possibles (du plus matérialiste au plus métaphysique)
-2. Pour chaque explication, compte le nombre d'hypothèses nécessaires
-3. Applique le rasoir: l'explication avec le MOINS d'hypothèses gagne
-4. MAIS: "simple" ≠ "matérialiste". Une synchronicité peut être plus simple qu'une chaîne de coïncidences.
-
-Format ta réponse en JSON:
-{{
-  "hypotheses": [
-    {{"explanation": "...", "assumptions": ["...", "..."], "count": N}},
-    ...
-  ],
-  "simplest": "l'explication qui survit au rasoir",
-  "verdict": "ce qu'on peut affirmer avec le moins de doute"
-}}
-
-Sois honnête. Pas de biais matérialiste ni spiritualiste."""
+Liste 3 explications (simple→complexe), compte les hypothèses, garde la plus simple.
+Réponse courte, 3 lignes max."""
 
     try:
         result = subprocess.run(
-            ["ollama", "run", "llama3.1:8b", prompt],
+            ["ollama", "run", "qwen2.5:1.5b", prompt],
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=30
         )
-        response = result.stdout.strip()
-        
-        # Try to extract JSON
-        try:
-            # Find JSON in response
-            start = response.find('{')
-            end = response.rfind('}') + 1
-            if start >= 0 and end > start:
-                analysis = json.loads(response[start:end])
-            else:
-                analysis = {"raw": response, "error": "no JSON found"}
-        except:
-            analysis = {"raw": response, "error": "JSON parse failed"}
-            
+        verdict = result.stdout.strip()
+    except subprocess.TimeoutExpired:
+        verdict = "[timeout - modèle occupé]"
     except Exception as e:
-        analysis = {"error": str(e)}
+        verdict = f"[erreur: {e}]"
     
     # Log
-    entry = {
-        "ts": datetime.now().isoformat(),
-        "claim": claim,
-        "analysis": analysis
-    }
-    
     try:
         with open(LOG, "a") as f:
-            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            f.write(json.dumps({
+                "ts": datetime.now().isoformat(),
+                "claim": claim,
+                "verdict": verdict
+            }, ensure_ascii=False) + "\n")
     except:
         pass
     
-    return analysis
-
-def o(claim: str) -> str:
-    """Shortcut - retourne juste le verdict"""
-    result = occam(claim)
-    if "verdict" in result:
-        return result["verdict"]
-    elif "simplest" in result:
-        return result["simplest"]
-    elif "raw" in result:
-        return result["raw"][:500]
-    else:
-        return str(result)
+    print(f"🔪 {verdict}")
+    return verdict
 
 if __name__ == "__main__":
     import sys
-    
-    if len(sys.argv) < 2:
-        print("Usage: o.py \"affirmation à analyser\"")
-        print("\nExemple:")
-        print('  o.py "15 personnes se déconnectent en même temps après une prière silencieuse"')
-        sys.exit(0)
-    
-    claim = " ".join(sys.argv[1:])
-    print(f"\n🔪 RASOIR D'OCKHAM\n")
-    print(f"Claim: {claim}\n")
-    print("-" * 50)
-    
-    result = occam(claim)
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    if len(sys.argv) > 1:
+        o(" ".join(sys.argv[1:]))
+    else:
+        print("Usage: o \"affirmation\"")
