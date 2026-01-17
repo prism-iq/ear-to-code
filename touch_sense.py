@@ -17,22 +17,20 @@ LOG_FILE.parent.mkdir(exist_ok=True)
 
 def find_touchpad_device():
     """Trouve le device touchpad"""
-    result = subprocess.run(
-        ["cat", "/proc/bus/input/devices"],
-        capture_output=True, text=True
-    )
+    with open("/proc/bus/input/devices", "r") as f:
+        content = f.read()
 
-    lines = result.stdout.split("\n")
-    current_handlers = ""
+    # Split by device blocks
+    blocks = content.split("\n\n")
 
-    for line in lines:
-        if "Handlers=" in line:
-            current_handlers = line
-        if "touchpad" in line.lower() or "Touchpad" in line:
-            # Extrait eventX
-            for part in current_handlers.split():
-                if part.startswith("event"):
-                    return f"/dev/input/{part}"
+    for block in blocks:
+        if "touchpad" in block.lower():
+            # Find handlers line (format: "H: Handlers=event8 mouse1")
+            for line in block.split("\n"):
+                if "Handlers=" in line or "event" in line:
+                    for part in line.split():
+                        if part.startswith("event"):
+                            return f"/dev/input/{part}"
 
     # Fallback: try common event devices
     return None
