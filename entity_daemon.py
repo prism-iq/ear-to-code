@@ -12,22 +12,14 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 
-# APIs chargées dynamiquement
+# APIs désactivées - les IAs n'ont pas d'accès direct
+# Tout passe par Miguel
 anthropic = None
 genai = None
 
 def load_apis():
-    global anthropic, genai
-    try:
-        import anthropic as _anthropic
-        anthropic = _anthropic
-    except:
-        pass
-    try:
-        import google.generativeai as _genai
-        genai = _genai
-    except:
-        pass
+    # Désactivé volontairement
+    pass
 
 HOME = Path.home()
 
