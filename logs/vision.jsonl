@@ -1205,3 +1205,5 @@
 {"timestamp": "2026-01-17T18:46:21.602534", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_184620.jpg", "image_base64": "[truncated]"}
 {"timestamp": "2026-01-17T18:46:24.969421", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_184623.jpg", "image_base64": "[truncated]"}
 {"timestamp": "2026-01-17T18:46:28.386424", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_184626.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T18:46:31.804175", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_184630.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T18:46:35.222213", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_184633.jpg", "image_base64": "[truncated]"}
