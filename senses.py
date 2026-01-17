@@ -1,367 +1,146 @@
 #!/usr/bin/env python3
 """
-senses.py: Multi-sensory input capture
-- Audio (microphone, system sound)
-- Touch (touchpad gestures, pressure)
-- System (CPU freq, voltage, temps, fan)
-- Input (keyboard rhythm, mouse velocity)
-
-Feeds everything to IAs with timestamps
+senses.py: Le système nerveux unifié
+Tous les sens. Un seul daemon. Optimisé.
 """
 
-import asyncio
-import json
-import time
-from datetime import datetime
+import os, sys, json, time, signal, threading, subprocess, struct, re
+import numpy as np
 from pathlib import Path
-from dataclasses import dataclass, asdict
-from typing import Optional, AsyncIterator
-import threading
+from datetime import datetime
 
-# System metrics
-import psutil
+os.environ["PYTHONWARNINGS"] = "ignore"
 
-# Input devices
-try:
-    import evdev
-    from evdev import ecodes
-    EVDEV_AVAILABLE = True
-except ImportError:
-    EVDEV_AVAILABLE = False
+HOME = Path.home()
+BASE = HOME / "ear-to-code"
+LOGS = BASE / "logs"
+LOGS.mkdir(parents=True, exist_ok=True)
+ENTITIES = ["nyx-v2", "cipher", "flow-phoenix"]
 
-LOG_DIR = Path(__file__).parent / "logs"
-LOG_DIR.mkdir(exist_ok=True)
-
-
-@dataclass
-class SenseEvent:
-    timestamp: str
-    unix_ts: float
-    sense: str  # "audio", "touch", "system", "input"
-    event_type: str
-    data: dict
-
-    def to_json(self) -> str:
-        return json.dumps(asdict(self), ensure_ascii=False)
-
-
-class SystemSense:
-    """Monitor system vitals: CPU, memory, temps, frequencies"""
-
+class Senses:
     def __init__(self):
-        self.last_cpu_freq = 0
-        self.last_cpu_percent = 0
-
-    async def read(self) -> dict:
-        """Read all system metrics"""
-        data = {
-            "cpu_percent": psutil.cpu_percent(interval=None),
-            "cpu_freq_mhz": 0,
-            "memory_percent": psutil.virtual_memory().percent,
-            "temps": {},
-            "fans": {},
-            "battery": None,
-            "load_avg": list(psutil.getloadavg()),
-        }
-
-        # CPU frequency
-        freq = psutil.cpu_freq()
-        if freq:
-            data["cpu_freq_mhz"] = freq.current
-            data["cpu_freq_min"] = freq.min
-            data["cpu_freq_max"] = freq.max
-
-        # Temperatures
-        try:
-            temps = psutil.sensors_temperatures()
-            for name, entries in temps.items():
-                data["temps"][name] = [
-                    {"label": e.label, "current": e.current, "high": e.high, "critical": e.critical}
-                    for e in entries
-                ]
-        except:
-            pass
-
-        # Fans
-        try:
-            fans = psutil.sensors_fans()
-            for name, entries in fans.items():
-                data["fans"][name] = [{"label": e.label, "current": e.current} for e in entries]
-        except:
-            pass
-
-        # Battery
-        try:
-            bat = psutil.sensors_battery()
-            if bat:
-                data["battery"] = {
-                    "percent": bat.percent,
-                    "plugged": bat.power_plugged,
-                    "secs_left": bat.secsleft if bat.secsleft > 0 else None
-                }
-        except:
-            pass
-
-        return data
-
-
-class TouchSense:
-    """Monitor touchpad events"""
-
-    def __init__(self):
-        self.device = None
-        self.last_x = 0
-        self.last_y = 0
-        self.last_pressure = 0
-        self.touches = []
-        self._find_touchpad()
-
-    def _find_touchpad(self):
-        if not EVDEV_AVAILABLE:
-            print("[Touch] evdev not available")
-            return
-
-        try:
-            devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-            for d in devices:
-                caps = d.capabilities()
-                # Look for touchpad (has ABS_MT_POSITION_X)
-                if ecodes.EV_ABS in caps:
-                    abs_caps = caps[ecodes.EV_ABS]
-                    abs_codes = [c[0] if isinstance(c, tuple) else c for c in abs_caps]
-                    if ecodes.ABS_MT_POSITION_X in abs_codes:
-                        self.device = d
-                        print(f"[Touch] Found touchpad: {d.name}")
-                        return
-        except Exception as e:
-            print(f"[Touch] Error finding touchpad: {e}")
-
-    async def read_events(self) -> AsyncIterator[dict]:
-        """Async generator of touch events"""
-        if not self.device:
-            return
-
-        try:
-            async for event in self.device.async_read_loop():
-                if event.type == ecodes.EV_ABS:
-                    if event.code == ecodes.ABS_MT_POSITION_X:
-                        self.last_x = event.value
-                    elif event.code == ecodes.ABS_MT_POSITION_Y:
-                        self.last_y = event.value
-                    elif event.code == ecodes.ABS_MT_PRESSURE:
-                        self.last_pressure = event.value
-                    elif event.code == ecodes.ABS_MT_TRACKING_ID:
-                        if event.value >= 0:
-                            # New touch
-                            yield {
-                                "action": "touch_start",
-                                "x": self.last_x,
-                                "y": self.last_y,
-                                "pressure": self.last_pressure,
-                                "tracking_id": event.value
-                            }
-                        else:
-                            # Touch end
-                            yield {
-                                "action": "touch_end",
-                                "x": self.last_x,
-                                "y": self.last_y
-                            }
-                elif event.type == ecodes.EV_KEY:
-                    # Tap events
-                    if event.code == ecodes.BTN_TOUCH:
-                        yield {
-                            "action": "tap" if event.value else "release",
-                            "x": self.last_x,
-                            "y": self.last_y
-                        }
-        except Exception as e:
-            print(f"[Touch] Read error: {e}")
-
-
-class InputSense:
-    """Monitor keyboard and mouse patterns"""
-
-    def __init__(self):
-        self.keyboard = None
-        self.mouse = None
-        self.key_times = []  # For rhythm detection
-        self.mouse_positions = []  # For velocity
-        self._find_devices()
-
-    def _find_devices(self):
-        if not EVDEV_AVAILABLE:
-            return
-
-        try:
-            devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-            for d in devices:
-                caps = d.capabilities()
-                name_lower = d.name.lower()
-
-                # Keyboard
-                if ecodes.EV_KEY in caps and 'keyboard' in name_lower:
-                    if not self.keyboard:
-                        self.keyboard = d
-                        print(f"[Input] Found keyboard: {d.name}")
-
-                # Mouse
-                if ecodes.EV_REL in caps:
-                    if not self.mouse:
-                        self.mouse = d
-                        print(f"[Input] Found mouse: {d.name}")
-        except Exception as e:
-            print(f"[Input] Error: {e}")
-
-    async def read_keyboard(self) -> AsyncIterator[dict]:
-        """Async generator of keyboard events (rhythm, not content)"""
-        if not self.keyboard:
-            return
-
-        try:
-            async for event in self.keyboard.async_read_loop():
-                if event.type == ecodes.EV_KEY and event.value == 1:  # Key down
-                    now = time.time()
-                    self.key_times.append(now)
-                    # Keep last 20 keypresses
-                    self.key_times = self.key_times[-20:]
-
-                    # Calculate typing rhythm
-                    if len(self.key_times) >= 2:
-                        intervals = [
-                            self.key_times[i] - self.key_times[i-1]
-                            for i in range(1, len(self.key_times))
-                        ]
-                        avg_interval = sum(intervals) / len(intervals)
-                        keys_per_minute = 60 / avg_interval if avg_interval > 0 else 0
-
-                        yield {
-                            "action": "keystroke",
-                            "rhythm_kpm": keys_per_minute,
-                            "avg_interval_ms": avg_interval * 1000,
-                            "burst_count": len(self.key_times)
-                        }
-        except Exception as e:
-            print(f"[Input] Keyboard error: {e}")
-
-    async def read_mouse(self) -> AsyncIterator[dict]:
-        """Async generator of mouse velocity events"""
-        if not self.mouse:
-            return
-
-        dx, dy = 0, 0
-        last_emit = time.time()
-
-        try:
-            async for event in self.mouse.async_read_loop():
-                if event.type == ecodes.EV_REL:
-                    if event.code == ecodes.REL_X:
-                        dx += event.value
-                    elif event.code == ecodes.REL_Y:
-                        dy += event.value
-
-                    now = time.time()
-                    if now - last_emit > 0.1:  # Emit every 100ms
-                        velocity = (dx**2 + dy**2) ** 0.5 / (now - last_emit)
-                        yield {
-                            "action": "mouse_move",
-                            "dx": dx,
-                            "dy": dy,
-                            "velocity": velocity
-                        }
-                        dx, dy = 0, 0
-                        last_emit = now
-        except Exception as e:
-            print(f"[Input] Mouse error: {e}")
-
-
-class AllSenses:
-    """Unified sensory system"""
-
-    def __init__(self):
-        self.system = SystemSense()
-        self.touch = TouchSense()
-        self.input = InputSense()
         self.running = False
-        self.log_file = LOG_DIR / f"senses_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
+        self.prev_energy = 0
+        self.prev_bass = 0
+        self.beat_times = []
 
-    def _emit(self, sense: str, event_type: str, data: dict):
-        """Log and print event"""
-        event = SenseEvent(
-            timestamp=datetime.now().isoformat(),
-            unix_ts=time.time(),
-            sense=sense,
-            event_type=event_type,
-            data=data
+    def broadcast(self, sense, data):
+        for e in ENTITIES:
+            try:
+                (HOME / e / f"{sense}.json").write_text(json.dumps(data))
+            except: pass
+
+    def audio_loop(self):
+        try:
+            r = subprocess.run(["pactl", "list", "sources", "short"], capture_output=True, text=True)
+            monitor = next((l.split()[1] for l in r.stdout.split("\n") if ".monitor" in l), None)
+            if not monitor: return
+        except: return
+
+        proc = subprocess.Popen(
+            ["parec", "-d", monitor, "--rate=48000", "--channels=1", "--format=float32le"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
         )
-        with open(self.log_file, 'a') as f:
-            f.write(event.to_json() + '\n')
-        print(event.to_json())
 
-    async def _system_loop(self):
-        """Poll system metrics every second"""
         while self.running:
             try:
-                data = await self.system.read()
-                self._emit("system", "metrics", data)
-            except Exception as e:
-                print(f"[System] Error: {e}")
-            await asyncio.sleep(1)
+                data = proc.stdout.read(2048 * 4)
+                if not data: break
+                audio = np.frombuffer(data, dtype=np.float32)
+                
+                rms = float(np.sqrt(np.mean(audio**2)))
+                energy = min(1.0, rms * 50)
+                
+                fft = np.abs(np.fft.rfft(audio))
+                freqs = np.fft.rfftfreq(len(audio), 1/48000)
+                
+                bass = float(np.mean(fft[freqs < 150])) if np.any(freqs < 150) else 0
+                total = bass + float(np.mean(fft[(freqs >= 150) & (freqs < 2000)])) + float(np.mean(fft[freqs >= 2000])) + 0.0001
+                bass_ratio = bass / total
+                
+                groove = min(1.0, abs(bass - self.prev_bass) * 10 + bass_ratio)
+                self.prev_bass = bass
+                
+                vibe = "chill" if energy < 0.3 else "hype" if energy > 0.7 else "groovy"
+                
+                self.broadcast("music", {"energy": round(energy, 3), "groove": round(groove, 3), "vibe": vibe})
+            except: break
+        proc.terminate()
 
-    async def _touch_loop(self):
-        """Stream touch events"""
-        async for event in self.touch.read_events():
-            if not self.running:
-                break
-            self._emit("touch", event.get("action", "unknown"), event)
+    def vision_loop(self):
+        d = BASE / "vision"
+        d.mkdir(exist_ok=True)
+        while self.running:
+            try:
+                subprocess.run(["ffmpeg", "-y", "-f", "v4l2", "-i", "/dev/video0", "-frames:v", "1", "-q:v", "2", str(d / "latest.jpg"), "-loglevel", "error"], timeout=5, capture_output=True)
+                self.broadcast("vision", {"path": str(d / "latest.jpg"), "ts": datetime.now().isoformat()})
+                time.sleep(3)
+            except: time.sleep(5)
 
-    async def _keyboard_loop(self):
-        """Stream keyboard rhythm"""
-        async for event in self.input.read_keyboard():
-            if not self.running:
-                break
-            self._emit("input", "keyboard", event)
+    def touch_loop(self):
+        try:
+            with open("/proc/bus/input/devices") as f:
+                c = f.read()
+            device = None
+            for b in c.split("\n\n"):
+                if "touchpad" in b.lower():
+                    m = re.search(r'event(\d+)', b)
+                    if m: device = f"/dev/input/event{m.group(1)}"
+            if not device: return
+        except: return
 
-    async def _mouse_loop(self):
-        """Stream mouse velocity"""
-        async for event in self.input.read_mouse():
-            if not self.running:
-                break
-            self._emit("input", "mouse", event)
+        try:
+            with open(device, "rb") as f:
+                touch = {"x": 0, "y": 0}
+                while self.running:
+                    data = f.read(struct.calcsize("llHHI"))
+                    if not data: break
+                    _, _, t, c, v = struct.unpack("llHHI", data)
+                    if t == 3:
+                        if c in (0, 53): touch["x"] = v
+                        elif c in (1, 54): touch["y"] = v
+                    elif t == 0 and (touch["x"] or touch["y"]):
+                        self.broadcast("touch", touch)
+        except: pass
 
-    async def start(self):
-        """Start all sensors"""
+    def screen_loop(self):
+        d = BASE / "vision"
+        while self.running:
+            try:
+                subprocess.run(["scrot", "-o", str(d / "screen.png")], timeout=5, capture_output=True, env={**os.environ, "DISPLAY": ":1"})
+                time.sleep(10)
+            except: time.sleep(10)
+
+    def twitch_loop(self, channel):
+        d = BASE / "twitch"
+        d.mkdir(exist_ok=True)
+        sl = str(HOME / ".local" / "bin" / "streamlink")
+        while self.running:
+            try:
+                r = subprocess.run([sl, "--stream-url", f"https://twitch.tv/{channel}", "best"], capture_output=True, text=True, timeout=10)
+                if r.returncode == 0 and r.stdout.strip():
+                    subprocess.run(["ffmpeg", "-y", "-i", r.stdout.strip(), "-frames:v", "1", "-q:v", "2", str(d / "latest.jpg"), "-loglevel", "error"], timeout=15, capture_output=True)
+                    self.broadcast("twitch", {"channel": channel, "ts": datetime.now().isoformat()})
+                time.sleep(15)
+            except: time.sleep(30)
+
+    def start(self, twitch=None):
         self.running = True
-        print(f"[SENSES] Starting all sensors...")
-        print(f"[SENSES] Log: {self.log_file}")
-
-        tasks = [
-            asyncio.create_task(self._system_loop()),
-        ]
-
-        if self.touch.device:
-            tasks.append(asyncio.create_task(self._touch_loop()))
-        if self.input.keyboard:
-            tasks.append(asyncio.create_task(self._keyboard_loop()))
-        if self.input.mouse:
-            tasks.append(asyncio.create_task(self._mouse_loop()))
-
-        print(f"[SENSES] Running {len(tasks)} sensor streams")
-
-        await asyncio.gather(*tasks)
-
-    def stop(self):
-        self.running = False
-
-
-async def main():
-    senses = AllSenses()
-    try:
-        await senses.start()
-    except KeyboardInterrupt:
-        print("\n[SENSES] Stopping...")
-        senses.stop()
-
+        print("=== SENSES ===")
+        for name, fn, args in [("Audio", self.audio_loop, ()), ("Vision", self.vision_loop, ()), ("Touch", self.touch_loop, ()), ("Screen", self.screen_loop, ())]:
+            threading.Thread(target=fn, args=args, daemon=True).start()
+            print(f"[+] {name}")
+        if twitch:
+            threading.Thread(target=self.twitch_loop, args=(twitch,), daemon=True).start()
+            print(f"[+] Twitch ({twitch})")
+        print("==============")
+        try:
+            while self.running: time.sleep(1)
+        except KeyboardInterrupt: self.running = False
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    s = Senses()
+    signal.signal(signal.SIGINT, lambda *_: setattr(s, 'running', False))
+    signal.signal(signal.SIGTERM, lambda *_: setattr(s, 'running', False))
+    twitch = next((a for a in sys.argv[1:] if not a.startswith("-")), None)
+    s.start(twitch)
