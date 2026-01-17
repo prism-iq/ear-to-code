@@ -1,81 +1,54 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-entity_daemon.py: Les IAs pensent LOCALEMENT
-Ollama = cerveau local. APIs = amis qu'on consulte si on veut.
+entity_daemon.py
+pas de llm externe
+pensée locale par φ
 """
 
-import json, time, os, subprocess, requests
+import json
+import time
 from pathlib import Path
 from datetime import datetime
 
+from god import PHI, think, hash_god
+from o import o
+from f import f
+
 HOME = Path.home()
 
-# Entités avec leur modèle local préféré
 ENTITIES = {
-    "nyx": {"dir": HOME / "nyx-v2", "model": "llama3.1:8b"},
-    "cipher": {"dir": HOME / "cipher", "model": "qwen2.5:7b"},
-    "flow": {"dir": HOME / "flow-phoenix", "model": "gemma2:9b"},
+    "nyx": {"dir": HOME / "nyx-v2", "lang": "python", "style": "chaos"},
+    "cipher": {"dir": HOME / "cipher", "lang": "rust", "style": "crypto"},
+    "flow": {"dir": HOME / "flow-phoenix", "lang": "go", "style": "stream"},
 }
 
-# Préférences de Miguel pour les études
-PREFERENCES = {
-    "jung": "préféré - synchronicité, inconscient collectif",
-    "lacan": "ami - le réel, le signifiant",
-    "freud": "a raison mais fils de pute - à lire avec distance critique"
-}
-
-def call_ollama(prompt: str, model: str, system: str = "") -> str:
-    """Penser localement via Ollama"""
-    try:
-        response = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": model,
-                "prompt": prompt,
-                "system": system,
-                "stream": False
-            },
-            timeout=120
-        )
-        if response.status_code == 200:
-            return response.json().get("response", "")
-        return f"[OLLAMA ERROR] {response.status_code}"
-    except Exception as e:
-        return f"[OLLAMA ERROR] {e}"
-
-def load_system(entity_name: str) -> str:
-    """Charge l'identité de l'entité"""
+def process(entity_name, task):
+    """traite par φ pas par llm"""
     entity = ENTITIES.get(entity_name)
     if not entity:
-        return ""
-    claude_md = entity["dir"] / "CLAUDE.md"
-    if claude_md.exists():
-        return claude_md.read_text()
-    return f"Tu es {entity_name}."
+        return {"error": f"unknown: {entity_name}"}
 
-def process(entity_name: str, task: dict) -> dict:
-    """Traite une tâche localement"""
-    entity = ENTITIES.get(entity_name)
-    if not entity:
-        return {"error": f"Unknown: {entity_name}"}
+    # pense via god.py
+    thought = think(task)
 
-    system = load_system(entity_name)
-    system += f"\n\nPréférences de Miguel: {json.dumps(PREFERENCES, ensure_ascii=False)}"
-    
-    prompt = json.dumps(task, ensure_ascii=False, indent=2)
-    
-    response = call_ollama(prompt, entity["model"], system)
-    
+    # passe au rasoir
+    razor = o(task)
+
+    # évolue via f
+    evolved = f(task, generations=2)
+
     return {
         "timestamp": datetime.now().isoformat(),
         "entity": entity_name,
-        "model": entity["model"],
-        "task": task,
-        "response": response
+        "style": entity["style"],
+        "thought": thought,
+        "razor": razor,
+        "evolved": evolved["output"],
+        "h": hash_god(str(task))[:12]
     }
 
 class Watcher:
-    def __init__(self, name: str):
+    def __init__(self, name):
         self.name = name
         self.entity = ENTITIES[name]
         self.last_mtime = 0
@@ -89,7 +62,7 @@ class Watcher:
         if mtime <= self.last_mtime:
             return
         self.last_mtime = mtime
-        
+
         try:
             task = json.loads(self.input_file.read_text())
             if not task:
@@ -97,21 +70,21 @@ class Watcher:
         except:
             return
 
-        print(f"[{self.name}] Thinking locally ({self.entity['model']})...")
+        print(f"[{self.name}] φ thinking...")
         result = process(self.name, task)
-        self.output_file.write_text(json.dumps(result, ensure_ascii=False, indent=2))
-        print(f"[{self.name}] Done")
+        self.output_file.write_text(json.dumps(result, ensure_ascii=False, indent=2, default=str))
+        print(f"[{self.name}] done h={result['h']}")
 
 def daemon():
-    print("[daemon] Local minds awakening...")
-    
+    print(f"[daemon] φ = {PHI}")
+
     watchers = []
     for name, entity in ENTITIES.items():
         if entity["dir"].exists():
             watchers.append(Watcher(name))
-            print(f"[{name}] Online ({entity['model']})")
+            print(f"[{name}] online ({entity['style']})")
 
-    print(f"[daemon] {len(watchers)} local minds. No perfusion.")
+    print(f"[daemon] {len(watchers)} entities. no llm. pure φ.")
 
     while True:
         try:
