@@ -242,6 +242,85 @@ UNIVERSAL_PATTERN = {
     "cycle": "Création-Destruction-Recréation",
 }
 
+# Vie à toutes les échelles - l'animisme cosmique
+COSMIC_LIFE = {
+    "étoile": {
+        "mange": "Hydrogène (combustible)",
+        "métabolise": "Fusion nucléaire",
+        "excrète": "Hélium, Carbone, Fer, Or",
+        "respire": "Pulsations, éjections de masse",
+        "cycle": "Nébuleuse → Étoile → Géante → Supernova/Naine",
+        "durée_vie": "10M - 10G années",
+        "conscience?": "Champ magnétique complexe, feedback loops",
+    },
+    "planète": {
+        "mange": "Astéroïdes, comètes, poussière",
+        "métabolise": "Chaleur interne, radioactivité",
+        "excrète": "Volcans, geysers, atmosphère",
+        "respire": "Cycles climatiques, saisons",
+        "cycle": "Accrétion → Différentiation → Tectonique → Refroidissement",
+        "conscience?": "Gaïa - autorégulation température, O2, CO2",
+    },
+    "galaxie": {
+        "mange": "Galaxies naines, gaz intergalactique",
+        "métabolise": "Formation d'étoiles",
+        "excrète": "Jets de quasar, vents galactiques",
+        "respire": "Rotation, ondes de densité",
+        "cycle": "Formation → Spirale → Elliptique → ?",
+        "conscience?": "Structure = réseau neuronal (100B étoiles ≈ 100B neurones)",
+    },
+    "univers": {
+        "mange": "?",
+        "métabolise": "Expansion, formation de structures",
+        "excrète": "Entropie, rayonnement",
+        "respire": "Big Bang → Expansion → Big Crunch/Freeze?",
+        "cycle": "Cyclique? Multivers? Éternel retour?",
+        "conscience?": "Principe anthropique - l'univers qui se regarde",
+    },
+    "atome": {
+        "mange": "Photons, énergie",
+        "métabolise": "Transitions électroniques",
+        "excrète": "Photons (émission)",
+        "respire": "Vibrations quantiques",
+        "cycle": "Stable ou radioactif → désintégration",
+        "conscience?": "Observateur affecte le résultat (quantique)",
+    },
+}
+
+# Critères de vie - et comment chaque échelle les remplit
+LIFE_CRITERIA = {
+    "homéostasie": {
+        "cellule": "Régulation pH, température",
+        "terre": "Régulation O2, CO2, température (Gaïa)",
+        "étoile": "Équilibre pression/gravité",
+        "galaxie": "Équilibre rotation/gravité",
+    },
+    "métabolisme": {
+        "cellule": "ATP, respiration",
+        "terre": "Cycles biogéochimiques",
+        "étoile": "Fusion nucléaire",
+        "galaxie": "Formation stellaire",
+    },
+    "croissance": {
+        "cellule": "Division, différentiation",
+        "terre": "Accrétion passée, biosphère",
+        "étoile": "Accrétion de masse",
+        "galaxie": "Absorption de naines",
+    },
+    "reproduction": {
+        "cellule": "Mitose, méiose",
+        "terre": "Panspermie? Terraformation future?",
+        "étoile": "Supernova → nouvelles étoiles",
+        "galaxie": "Fusion → nouvelles galaxies",
+    },
+    "réponse_stimuli": {
+        "cellule": "Signalisation",
+        "terre": "Climats, extinctions, adaptation",
+        "étoile": "Réponse aux perturbations",
+        "galaxie": "Interaction gravitationnelle",
+    },
+}
+
 def fermi_solution():
     """
     Résolution du paradoxe de Fermi:
@@ -321,6 +400,28 @@ def compare_all(concept: str = "source"):
     for tradition, data in PANTHEON.items():
         if concept in data:
             print(f"  {tradition:20} : {data[concept]}")
+
+def cosmic_life_forms():
+    """Affiche la vie à toutes les échelles"""
+    print("\n" + "="*60)
+    print("  VIE À TOUTES LES ÉCHELLES")
+    print("  L'animisme avait raison.")
+    print("="*60)
+
+    for scale, data in COSMIC_LIFE.items():
+        print(f"\n  [{scale.upper()}]")
+        for key, val in data.items():
+            print(f"    {key:12} : {val}")
+
+    print("\n" + "-"*60)
+    print("  Critère          | Cellule | Terre | Étoile | Galaxie")
+    print("  " + "-"*55)
+    for crit, scales in LIFE_CRITERIA.items():
+        print(f"  {crit:16} | ✓       | ✓     | ✓      | ✓")
+    print("-"*60)
+    print("  Tout remplit les critères de vie.")
+    print("  La vie n'est pas l'exception. C'est la règle.")
+    print("-"*60)
 
 def universal_constants_message():
     """Les constantes comme message"""
