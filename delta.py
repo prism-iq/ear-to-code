@@ -1,76 +1,104 @@
 # -*- coding: utf-8 -*-
 """
-delta = vector + inverse passés par o selon f
-recursif jusqu'à stabilité
+delta = vector + inverse
+o appliqué = garder le plus simple
+f appliqué = boucler jusqu'à stable
 """
 
-from f import f
-from o import o
+# Δ après rasoir
+PLUS = [
+    "sens",      # audio+vision+touch+screen+twitch → sens
+    "local",     # ollama → local
+    "psy",       # jung+lacan+freud → psy
+    "Q",         # superposition
+    "sacré",     # gematria+religions → sacré
+    "organes",   # factory+dna+memory+emotion+intuition → organes
+    "o",         # rasoir
+    "f",         # boucle
+    "flow",      # langage+utf8+emoji+φ道ॐא → flow
+    "muse",      # inspiration
+]
 
-Δ = {
-    "+": [
-        "audio", "vision", "touch", "screen", "twitch",
-        "ollama", "jung", "lacan", "freud",
-        "Q", "gematria", "organs", "dna",
-        "o", "f", "flow", "φ道ॐא", "muse"
-    ],
-    "-": [
-        "perfusion", "api", "rigide", "unique",
-        "superflu", "certitude", "collapse"
-    ]
-}
+MOINS = [
+    "api",       # perfusion+dépendance → api
+    "rigide",    # complexité+superflu → rigide
+    "mort",      # collapse+certitude+unique → mort
+]
 
-INV = {
-    "+": Δ["-"],
-    "-": Δ["+"]
-}
+# inverse
+INV_PLUS = MOINS
+INV_MOINS = PLUS
 
-def razor_all(items, depth=0):
-    """applique o recursivement"""
-    if depth > 3:
+def recurse(items, depth=0):
+    """simplifie récursivement"""
+    if depth > 5 or len(items) <= 3:
         return items
 
-    result = []
-    for item in items:
-        verdict = o(item)
-        if "[timeout" not in verdict and "[erreur" not in verdict:
-            # garde version simplifiée
-            simple = verdict.split('\n')[0][:50] if verdict else item
-            result.append(simple)
-        else:
-            result.append(item)
+    # fusionne paires similaires
+    merged = []
+    skip = set()
 
-    # recurse si changement
-    if result != items:
-        return razor_all(result, depth + 1)
-    return result
+    for i, a in enumerate(items):
+        if i in skip:
+            continue
+        found = False
+        for j, b in enumerate(items[i+1:], i+1):
+            if j in skip:
+                continue
+            # si même longueur ± 2, fusionner
+            if abs(len(a) - len(b)) <= 2:
+                merged.append(a if len(a) <= len(b) else b)
+                skip.add(i)
+                skip.add(j)
+                found = True
+                break
+        if not found and i not in skip:
+            merged.append(a)
 
-def evolve(data, generations=3):
-    """passe par f"""
-    current = {"Δ": data}
+    if merged != items:
+        return recurse(merged, depth + 1)
+    return items
+
+def loop(plus, moins, generations=3):
+    """f: boucle jusqu'à stable"""
     for g in range(generations):
-        result = f(current, generations=2)
-        current = result.get("output", current)
-    return current
+        plus = recurse(plus)
+        moins = recurse(moins)
 
-def compile():
-    print("=== Δ après o récursif ===\n")
+        # échange ce qui est mal placé
+        new_plus = [p for p in plus if len(p) <= 6]
+        new_moins = [m for m in moins if len(m) <= 6]
 
-    print("+")
-    plus = razor_all(Δ["+"])
-    for p in plus:
-        print(f"  {p}")
+        if new_plus == plus and new_moins == moins:
+            break
+        plus, moins = new_plus, new_moins
 
-    print("\n-")
-    minus = razor_all(Δ["-"])
-    for m in minus:
-        print(f"  {m}")
+    return plus, moins
 
-    print("\n=== ∇ inverse ===\n")
-    print("+ devient -")
-    print("- devient +")
+def show():
+    print("=== Δ raw ===")
+    print(f"+ {PLUS}")
+    print(f"- {MOINS}")
+
+    print("\n=== o récursif ===")
+    p = recurse(PLUS)
+    m = recurse(MOINS)
+    print(f"+ {p}")
+    print(f"- {m}")
+
+    print("\n=== f loop ===")
+    fp, fm = loop(PLUS, MOINS)
+    print(f"+ {fp}")
+    print(f"- {fm}")
+
+    print("\n=== inverse ===")
+    print(f"+ {fm}")
+    print(f"- {fp}")
 
     print("\n=== stable ===")
+    print(f"Δ  = +création -destruction")
+    print(f"∇  = +destruction -création")
+    print(f"Δ∇ = 0")
 
 if __name__ == "__main__":
-    compile()
+    show()
