@@ -1,0 +1,18 @@
+[Unit]
+Description=ear-to-code Audio Listener for AI
+After=sound.target pipewire.service
+Wants=pipewire.service
+
+[Service]
+Type=simple
+User=ego-bash
+WorkingDirectory=/home/ego-bash/ear-to-code
+Environment=PATH=/home/ego-bash/venv/bin:/usr/bin
+ExecStart=/home/ego-bash/venv/bin/python3 /home/ego-bash/ear-to-code/ear.py --system
+Restart=always
+RestartSec=3
+# NEVER let it die
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=default.target

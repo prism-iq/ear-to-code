@@ -1,0 +1,3 @@
+{"error_type": "FileNotFoundError", "error_msg": "/tmp/test123", "repair_attempted": "mkdir -p", "command": "mkdir -p /tmp", "success": true, "output": "", "timestamp": "2026-01-17T14:46:51.030755"}
+{"error_type": "FileNotFoundError", "error_msg": "/tmp/test123", "repair_attempted": "mkdir -p", "command": "mkdir -p /tmp", "success": true, "output": "", "timestamp": "2026-01-17T14:46:51.033049"}
+{"error_type": "FileNotFoundError", "error_msg": "/tmp/test123", "repair_attempted": "mkdir -p", "command": "mkdir -p /tmp", "success": true, "output": "", "timestamp": "2026-01-17T14:46:51.035129"}

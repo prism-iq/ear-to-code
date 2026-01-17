@@ -1,0 +1,8 @@
+{"type": "learning", "pattern": "Quand user dit un nom, il parle à cette entité pas à Claude", "works": true, "context": "Routing", "timestamp": "2026-01-17T14:44:24.940132"}
+{"type": "learning", "pattern": "Le système ne doit JAMAIS mourir - reconnexion auto obligatoire", "works": true, "context": "Architecture", "timestamp": "2026-01-17T14:44:24.940164"}
+{"type": "learning", "pattern": "Pas hémophile = le système cicatrise, se répare seul, crash pas", "works": true, "context": "Métaphore sang", "timestamp": "2026-01-17T14:45:02.445844"}
+{"type": "learning", "pattern": "Plaquettes = agents de réparation auto dans le code", "works": true, "context": "Architecture résiliente", "timestamp": "2026-01-17T14:45:02.445934"}
+{"type": "learning", "pattern": "Laser génétique = modifier au niveau fondamental, CRISPR du code", "works": true, "context": "Capacité de mutation", "timestamp": "2026-01-17T14:45:02.445958"}
+{"type": "learning", "pattern": "Ne pas demander \"on continue?\" - juste continuer", "works": true, "context": "Flow de travail", "timestamp": "2026-01-17T14:45:58.767813"}
+{"type": "learning", "pattern": "Feedback debug = analyser son propre output avant de passer à la suite", "works": true, "context": "Meta", "timestamp": "2026-01-17T14:45:58.767839"}
+{"type": "learning", "pattern": "Quand user dit \"f\" = feedback/debug demandé sur le dernier message/action", "works": true, "context": "Raccourci", "timestamp": "2026-01-17T14:46:51.002448"}
