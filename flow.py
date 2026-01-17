@@ -109,6 +109,87 @@ SENS = {
     # العربية
     "فكر": ("think", "process", "local"),
     "اصنع": ("create", "make", "organ"),
+    "٠": ("zero", "origin", "void"),
+    "١": ("one", "unity", "start"),
+    "٢": ("two", "dual", "pair"),
+    "٣": ("three", "trinity", "balance"),
+
+    # ελληνικά greek
+    "φ": ("phi", "golden", "ratio"),
+    "Φ": ("phi", "golden", "ratio"),
+    "π": ("pi", "circle", "infinite"),
+    "Ω": ("omega", "end", "complete"),
+    "α": ("alpha", "start", "first"),
+    "ω": ("omega", "end", "last"),
+    "λ": ("lambda", "function", "abstract"),
+    "Σ": ("sigma", "sum", "all"),
+    "Δ": ("delta", "change", "diff"),
+    "ψ": ("psi", "psyche", "mind"),
+    "Ψ": ("psi", "psyche", "mind"),
+
+    # 中文 mandarin
+    "道": ("dao", "way", "path"),
+    "气": ("qi", "energy", "flow"),
+    "心": ("xin", "heart", "mind"),
+    "空": ("kong", "empty", "void"),
+    "一": ("yi", "one", "unity"),
+    "二": ("er", "two", "dual"),
+    "三": ("san", "three", "trinity"),
+    "無": ("wu", "nothing", "void"),
+    "有": ("you", "exist", "being"),
+    "陰": ("yin", "dark", "passive"),
+    "陽": ("yang", "light", "active"),
+    "龍": ("long", "dragon", "power"),
+
+    # ᠮᠣᠩᠭᠣᠯ mongolian
+    "ᠮᠣᠩᠭᠣᠯ": ("mongol", "origin", "steppe"),
+    "ᠲᠡᠭᠷᠢ": ("tengri", "sky", "divine"),
+    "ᠰᠦᠯᠳᠡ": ("sulde", "spirit", "soul"),
+
+    # עברית hebrew
+    "א": ("aleph", "one", "breath"),
+    "ב": ("bet", "house", "container"),
+    "ג": ("gimel", "camel", "movement"),
+    "ש": ("shin", "fire", "spirit"),
+    "ת": ("tav", "mark", "end"),
+    "י": ("yod", "hand", "point"),
+    "ה": ("he", "window", "breath"),
+    "ו": ("vav", "hook", "connect"),
+
+    # संस्कृत sanskrit devanagari
+    "ॐ": ("om", "all", "source"),
+    "अ": ("a", "start", "first"),
+    "ब्रह्म": ("brahma", "create", "absolute"),
+    "आत्मन्": ("atman", "self", "soul"),
+    "प्राण": ("prana", "breath", "life"),
+    "चक्र": ("chakra", "wheel", "energy"),
+
+    # 한글 korean
+    "기": ("gi", "energy", "qi"),
+    "도": ("do", "way", "dao"),
+    "심": ("sim", "heart", "mind"),
+
+    # ไทย thai
+    "ธ": ("tho", "flag", "dharma"),
+    "ก": ("ko", "chicken", "start"),
+
+    # runes ᚠᚢᚦᚨᚱᚲ
+    "ᚠ": ("fehu", "wealth", "cattle"),
+    "ᚢ": ("uruz", "strength", "ox"),
+    "ᚦ": ("thurisaz", "giant", "force"),
+    "ᚨ": ("ansuz", "god", "mouth"),
+    "ᚱ": ("raido", "ride", "journey"),
+    "ᚲ": ("kenaz", "torch", "knowledge"),
+
+    # symbols math
+    "∅": ("empty", "void", "null"),
+    "∈": ("in", "belong", "element"),
+    "∀": ("forall", "every", "universal"),
+    "∃": ("exists", "some", "particular"),
+    "≡": ("identical", "same", "equiv"),
+    "≈": ("approx", "near", "fuzzy"),
+    "∴": ("therefore", "thus", "so"),
+    "∵": ("because", "since", "cause"),
 }
 
 def parse(text):
