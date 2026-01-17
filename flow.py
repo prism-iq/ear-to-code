@@ -5,8 +5,16 @@ chaque mot porte plusieurs sens
 on parse on devine on agit
 
 inspiré de go simplicité pas de bruit
+
+toutes graphies acceptées
 toutes langues acceptées
-français english español deutsch 日本語 العربية
+majuscules minuscules peu importe
+accents ou pas peu importe
+typos acceptées on devine
+unicode emoji tout passe
+
+français english español deutsch 日本語 العربية עברית
+ελληνικά русский 한국어 हिंदी ไทย
 
 credits go team pour la philosophie
 """
