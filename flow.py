@@ -21,8 +21,54 @@ credits go team pour la philosophie
 
 from pathlib import Path
 import json
+import unicodedata
 
 HOME = Path.home()
+
+
+def normalize(word):
+    """
+    normalise toutes graphies
+    accents ou pas
+    majuscules ou pas
+    unicode decomposé
+    """
+    # minuscules
+    w = word.lower()
+    # enlève accents
+    w = unicodedata.normalize('NFD', w)
+    w = ''.join(c for c in w if unicodedata.category(c) != 'Mn')
+    return w
+
+
+def fuzzy_match(word, known):
+    """
+    match approximatif
+    typos acceptées
+    """
+    w = normalize(word)
+
+    # match exact
+    if w in known:
+        return w
+
+    # match sans accents dans known
+    for k in known:
+        if normalize(k) == w:
+            return k
+
+    # match partiel si long
+    if len(w) >= 3:
+        for k in known:
+            nk = normalize(k)
+            if w in nk or nk in w:
+                return k
+            # levenshtein simple
+            if len(w) == len(nk) and sum(a != b for a, b in zip(w, nk)) <= 1:
+                return k
+
+    return None
+
 
 # mots clés multisens toutes langues
 SENS = {
