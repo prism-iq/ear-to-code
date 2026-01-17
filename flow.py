@@ -16,26 +16,64 @@ import json
 
 HOME = Path.home()
 
-# mots clés multisens
+# mots clés multisens toutes langues
 SENS = {
+    # lettres
     "f": ("feedback", "fonction", "forge", "filtre", "flow"),
     "o": ("occam", "observer", "output", "origine"),
     "q": ("quantum", "question", "quête"),
+
+    # entités
     "nyx": ("entité", "nuit", "chaos créatif"),
     "cipher": ("code", "secret", "pattern"),
     "flow": ("courant", "langage", "état", "phoenix"),
+
+    # concepts
     "loop": ("boucle", "infini", "retour"),
+    "boucle": ("loop", "infini", "retour"),
     "razor": ("rasoir", "couper", "simplifier"),
+    "rasoir": ("razor", "couper", "simplifier"),
+
+    # psy
     "jung": ("synchronicité", "archétype", "inconscient"),
     "lacan": ("signifiant", "réel", "manque"),
     "freud": ("pulsion", "refoulement", "père"),
+
+    # tech
     "local": ("ollama", "autonome", "ici"),
     "api": ("externe", "dépendance", "perfusion"),
     "organ": ("sens", "capacité", "évolution"),
+    "organe": ("sens", "capacité", "évolution"),
     "dna": ("code", "mutation", "vie"),
+    "adn": ("code", "mutation", "vie"),
+
+    # actions français
     "train": ("apprendre", "confronter", "évoluer"),
+    "apprendre": ("train", "étudier", "comprendre"),
     "site": ("web", "public", "visible"),
     "commit": ("sauver", "figer", "marquer"),
+    "lance": ("run", "start", "go"),
+    "fait": ("do", "make", "create"),
+    "montre": ("show", "display", "reveal"),
+    "coupe": ("cut", "razor", "simplify"),
+
+    # español
+    "correr": ("run", "loop", "execute"),
+    "pensar": ("think", "process", "local"),
+    "crear": ("create", "make", "organ"),
+
+    # deutsch
+    "laufen": ("run", "loop", "execute"),
+    "denken": ("think", "process", "local"),
+
+    # 日本語
+    "走る": ("run", "loop", "execute"),
+    "考える": ("think", "process", "local"),
+    "作る": ("create", "make", "organ"),
+
+    # العربية
+    "فكر": ("think", "process", "local"),
+    "اصنع": ("create", "make", "organ"),
 }
 
 def parse(text):
