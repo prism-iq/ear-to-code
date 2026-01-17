@@ -84,15 +84,28 @@ def daemon():
             watchers.append(Watcher(name))
             print(f"[{name}] online ({entity['style']})")
 
-    print(f"[daemon] {len(watchers)} entities. no llm. pure φ.")
+    print(f"[daemon] {len(watchers)} entities. no llm. pure φ. never dies.")
 
     while True:
         try:
             for w in watchers:
                 w.check()
+
+            # hot reload check
+            reload_file = HOME / "ear-to-code" / ".reload"
+            if reload_file.exists():
+                reload_file.unlink()
+                import importlib
+                import god, o, f
+                importlib.reload(god)
+                importlib.reload(o)
+                importlib.reload(f)
+                print("[daemon] hot reload done")
+
             time.sleep(0.5)
         except KeyboardInterrupt:
-            break
+            print("[daemon] immortal, ignoring")
+            time.sleep(1)
         except Exception as e:
             print(f"[err] {e}")
             time.sleep(1)
