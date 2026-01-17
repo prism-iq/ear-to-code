@@ -2350,3 +2350,15 @@
 {"timestamp": "2026-01-17T19:51:30.275970", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195128.jpg", "image_base64": "[truncated]"}
 {"timestamp": "2026-01-17T19:51:33.642820", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195132.jpg", "image_base64": "[truncated]"}
 {"timestamp": "2026-01-17T19:51:37.060285", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195135.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:51:40.478689", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195139.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:51:45.960135", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195144.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:51:49.377440", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195147.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:51:55.660646", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195154.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:52:11.902507", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195210.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:52:15.320031", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195213.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:52:18.838178", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195217.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:52:22.255302", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195220.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:52:25.673197", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195224.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:52:29.091010", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195227.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:52:32.508417", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195231.jpg", "image_base64": "[truncated]"}
+{"timestamp": "2026-01-17T19:52:35.925677", "type": "vision", "image_path": "/home/ego-bash/ear-to-code/vision/cam_20260117_195234.jpg", "image_base64": "[truncated]"}
