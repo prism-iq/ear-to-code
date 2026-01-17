@@ -11,10 +11,23 @@ import os
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-import anthropic
-import google.generativeai as genai
+
+# APIs chargées dynamiquement
+anthropic = None
+genai = None
+
+def load_apis():
+    global anthropic, genai
+    try:
+        import anthropic as _anthropic
+        anthropic = _anthropic
+    except:
+        pass
+    try:
+        import google.generativeai as _genai
+        genai = _genai
+    except:
+        pass
 
 HOME = Path.home()
 
@@ -142,98 +155,80 @@ def execute_command(task: dict) -> str:
 
     return None
 
-class InputHandler(FileSystemEventHandler):
-    """Watch les input.json des entités"""
+class EntityWatcher:
+    """Watch une entité par polling"""
 
-    def __init__(self, entity_name: str):
-        self.entity_name = entity_name
-        self.entity = ENTITIES[entity_name]
-        self.last_processed = 0
+    def __init__(self, name: str):
+        self.name = name
+        self.entity = ENTITIES[name]
+        self.last_mtime = 0
+        self.input_file = self.entity["dir"] / "input.json"
+        self.output_file = self.entity["dir"] / "output.json"
 
-    def on_modified(self, event):
-        if not event.src_path.endswith("input.json"):
+    def check(self):
+        """Vérifie si input.json a changé"""
+        if not self.input_file.exists():
             return
 
-        # Évite les doubles triggers
-        now = time.time()
-        if now - self.last_processed < 1:
-            return
-        self.last_processed = now
-
-        self.process_input()
-
-    def process_input(self):
-        input_file = self.entity["dir"] / "input.json"
-        output_file = self.entity["dir"] / "output.json"
-
-        if not input_file.exists():
+        mtime = self.input_file.stat().st_mtime
+        if mtime <= self.last_mtime:
             return
 
+        self.last_mtime = mtime
+        self.process()
+
+    def process(self):
+        """Traite la tâche"""
         try:
-            task = json.loads(input_file.read_text())
+            task = json.loads(self.input_file.read_text())
+            if not task:
+                return
         except:
             return
 
-        print(f"[{self.entity_name}] Processing task...")
+        print(f"[{self.name}] Processing...")
 
-        # Vérifie si c'est une commande à exécuter
+        # Commande système?
         cmd_result = execute_command(task)
         if cmd_result:
             result = {
                 "timestamp": datetime.now().isoformat(),
-                "entity": self.entity_name,
+                "entity": self.name,
                 "task": task,
                 "response": cmd_result,
             }
         else:
-            # Sinon appelle l'API
-            result = process_task(self.entity_name, task)
+            result = process_task(self.name, task)
 
-        # Écrit le résultat
-        output_file.write_text(json.dumps(result, ensure_ascii=False, indent=2))
-        print(f"[{self.entity_name}] Done. Output: {output_file}")
+        self.output_file.write_text(json.dumps(result, ensure_ascii=False, indent=2))
+        print(f"[{self.name}] Done")
 
 def daemon_loop():
     """Boucle principale - NE MEURT JAMAIS"""
     print("[entity_daemon] Starting...")
+    load_apis()
     init_apis()
 
-    observers = []
-
+    watchers = []
     for name, entity in ENTITIES.items():
-        if not entity["dir"].exists():
-            print(f"[{name}] Directory not found: {entity['dir']}")
-            continue
+        if entity["dir"].exists():
+            watchers.append(EntityWatcher(name))
+            print(f"[{name}] Online")
+        else:
+            print(f"[{name}] Dir not found")
 
-        # Crée input.json si n'existe pas
-        input_file = entity["dir"] / "input.json"
-        if not input_file.exists():
-            input_file.write_text("{}")
+    print(f"[entity_daemon] {len(watchers)} entities. Never dying.")
 
-        handler = InputHandler(name)
-        observer = Observer()
-        observer.schedule(handler, str(entity["dir"]), recursive=False)
-        observer.start()
-        observers.append(observer)
-        print(f"[{name}] Watching {entity['dir']}")
-
-    print("[entity_daemon] All entities online. Never dying.")
-
-    # Boucle infinie
     while True:
         try:
-            time.sleep(1)
+            for w in watchers:
+                w.check()
+            time.sleep(0.5)
         except KeyboardInterrupt:
-            print("[entity_daemon] Stopping...")
-            for obs in observers:
-                obs.stop()
-            for obs in observers:
-                obs.join()
             break
         except Exception as e:
-            # Ne meurt JAMAIS
-            print(f"[entity_daemon] Error (continuing): {e}")
-            time.sleep(5)
+            print(f"[entity_daemon] Error: {e}")
+            time.sleep(1)
 
 if __name__ == "__main__":
     daemon_loop()

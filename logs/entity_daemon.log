@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "/home/ego-bash/ear-to-code/entity_daemon.py", line 14, in <module>
-    from watchdog.observers import Observer
-ModuleNotFoundError: No module named 'watchdog'
