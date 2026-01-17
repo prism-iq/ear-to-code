@@ -293,14 +293,23 @@ if __name__ == "__main__":
             pass
 
     # Parse args
-    for i, arg in enumerate(sys.argv[1:]):
-        if arg == "--channel" and i + 2 <= len(sys.argv):
-            channel = sys.argv[i + 2]
-        elif arg == "--token" and i + 2 <= len(sys.argv):
-            oauth_token = sys.argv[i + 2]
-        elif arg == "--interval" and i + 2 <= len(sys.argv):
-            interval = float(sys.argv[i + 2])
+    args = sys.argv[1:]
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--channel" and i + 1 < len(args):
+            channel = args[i + 1]
+            i += 2
+        elif arg == "--token" and i + 1 < len(args):
+            oauth_token = args[i + 1]
+            i += 2
+        elif arg == "--interval" and i + 1 < len(args):
+            interval = float(args[i + 1])
+            i += 2
         elif not arg.startswith("-"):
             channel = arg
+            i += 1
+        else:
+            i += 1
 
     daemon(channel, oauth_token, interval)
