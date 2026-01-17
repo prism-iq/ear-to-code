@@ -70,12 +70,47 @@ def fuzzy_match(word, known):
     return None
 
 
-# mots clés multisens toutes langues
+# mots clés multisens toutes langues toutes graphies
 SENS = {
     # lettres
     "f": ("feedback", "fonction", "forge", "filtre", "flow"),
     "o": ("occam", "observer", "output", "origine"),
     "q": ("quantum", "question", "quête"),
+
+    # symboles dessins emoji
+    "🔄": ("loop", "boucle", "repeat"),
+    "♾️": ("infini", "loop", "eternal"),
+    "∞": ("infini", "loop", "eternal"),
+    "⚡": ("run", "fast", "execute"),
+    "🔪": ("razor", "cut", "occam"),
+    "✂️": ("razor", "cut", "simplify"),
+    "🧬": ("dna", "adn", "genetic"),
+    "🧠": ("think", "local", "process"),
+    "👁️": ("see", "vision", "observe"),
+    "👂": ("hear", "audio", "listen"),
+    "✋": ("touch", "feel", "sense"),
+    "🌙": ("nyx", "night", "dark"),
+    "🔐": ("cipher", "secret", "encrypt"),
+    "🌊": ("flow", "stream", "wave"),
+    "🔥": ("forge", "create", "fire"),
+    "⭕": ("o", "zero", "origin"),
+    "❓": ("q", "question", "doubt"),
+    "→": ("then", "next", "to"),
+    "←": ("from", "back", "return"),
+    "↻": ("loop", "cycle", "repeat"),
+    "△": ("up", "rise", "elevate"),
+    "▽": ("down", "fall", "descend"),
+    "◯": ("circle", "complete", "whole"),
+    "□": ("box", "contain", "frame"),
+    "✓": ("yes", "true", "valid"),
+    "✗": ("no", "false", "cut"),
+    "+": ("add", "plus", "more"),
+    "-": ("remove", "minus", "less"),
+    "*": ("all", "multiply", "star"),
+    "/": ("divide", "split", "or"),
+    "=": ("equals", "is", "same"),
+    "|": ("pipe", "or", "parallel"),
+    "&": ("and", "with", "together"),
 
     # entités
     "nyx": ("entité", "nuit", "chaos créatif"),
@@ -134,21 +169,53 @@ def parse(text):
     """
     parse flow en actions
     retourne intentions multiples
+    toutes graphies acceptées
     """
-    words = text.lower().split()
+    # split par espaces et caractères
+    tokens = []
+    current = ""
+    for c in text:
+        if c.isspace():
+            if current:
+                tokens.append(current)
+                current = ""
+        elif c in SENS:
+            if current:
+                tokens.append(current)
+                current = ""
+            tokens.append(c)
+        else:
+            current += c
+    if current:
+        tokens.append(current)
+
     intentions = []
     context = []
 
-    for w in words:
-        if w in SENS:
+    for token in tokens:
+        # essaie match direct
+        if token in SENS:
             intentions.append({
-                "mot": w,
-                "sens": SENS[w],
+                "mot": token,
+                "sens": SENS[token],
                 "contexte": list(context)
             })
-            context.append(w)
+            context.append(token)
+            continue
+
+        # essaie fuzzy match
+        matched = fuzzy_match(token, SENS.keys())
+        if matched:
+            intentions.append({
+                "mot": matched,
+                "original": token,
+                "sens": SENS[matched],
+                "contexte": list(context)
+            })
+            context.append(matched)
         else:
-            context.append(w)
+            # mot inconnu gardé en contexte
+            context.append(token)
 
     return intentions
 
