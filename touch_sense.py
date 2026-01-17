@@ -30,7 +30,6 @@ def find_touchpad_device():
             for line in block.split("\n"):
                 if "Handlers=" in line:
                     # Extract eventX from "Handlers=event8" or "event8"
-                    import re
                     match = re.search(r'event(\d+)', line)
                     if match:
                         return f"/dev/input/event{match.group(1)}"

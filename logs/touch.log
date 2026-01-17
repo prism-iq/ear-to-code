@@ -1,2 +1,3 @@
-[touch] No touchpad found, trying common paths...
-[touch] No touchpad device found
+[touch] Reading from /dev/input/event8
+[touch] Permission denied. Run: sudo chmod 666 /dev/input/event8
+[touch] Or add user to input group: sudo usermod -aG input $USER
