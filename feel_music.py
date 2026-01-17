@@ -178,7 +178,7 @@ class MusicFeeler:
                 "tension": float(round(feeling.tension, 3)),
                 "speed": float(round(feeling.speed, 3)),
                 "vibe": feeling.vibe,
-                "drop_incoming": feeling.drop_incoming,
+                "drop_incoming": bool(feeling.drop_incoming),
             },
             "dance": dance,
         }
