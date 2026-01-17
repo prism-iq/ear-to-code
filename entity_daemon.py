@@ -13,6 +13,7 @@ from datetime import datetime
 from god import PHI, think, hash_god
 from o import o
 from f import f
+from l import immortal
 
 HOME = Path.home()
 
@@ -76,7 +77,8 @@ class Watcher:
         print(f"[{self.name}] done h={result['h']}")
 
 def daemon():
-    print(f"[daemon] φ = {PHI}")
+    immortal()
+    print(f"[daemon] φ = {PHI} | immortal")
 
     watchers = []
     for name, entity in ENTITIES.items():
