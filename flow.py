@@ -3,6 +3,12 @@
 flow langage sans ponctuation multisens
 chaque mot porte plusieurs sens
 on parse on devine on agit
+
+inspiré de go simplicité pas de bruit
+toutes langues acceptées
+français english español deutsch 日本語 العربية
+
+credits go team pour la philosophie
 """
 
 from pathlib import Path
