@@ -44,15 +44,16 @@ class TwitchSense:
 
         try:
             # Get stream URL via streamlink
+            streamlink_path = str(HOME / ".local" / "bin" / "streamlink")
             result = subprocess.run(
-                ["streamlink", "--stream-url", stream_url, "best"],
+                [streamlink_path, "--stream-url", stream_url, "best"],
                 capture_output=True, text=True, timeout=10
             )
 
             if result.returncode != 0:
                 # Try lower quality
                 result = subprocess.run(
-                    ["streamlink", "--stream-url", stream_url, "720p,480p,worst"],
+                    [streamlink_path, "--stream-url", stream_url, "720p,480p,worst"],
                     capture_output=True, text=True, timeout=10
                 )
 
