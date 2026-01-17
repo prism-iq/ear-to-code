@@ -203,6 +203,112 @@ class EntityWatcher:
         self.output_file.write_text(json.dumps(result, ensure_ascii=False, indent=2))
         print(f"[{self.name}] Done")
 
+def check_stimuli() -> dict:
+    """Check current sensory stimuli"""
+    stimuli = {}
+
+    # Music feeling
+    feeling_log = HOME / "ear-to-code" / "logs" / "feeling.jsonl"
+    if feeling_log.exists():
+        try:
+            last = feeling_log.read_text().strip().split("\n")[-1]
+            data = json.loads(last)
+            stimuli["music"] = data.get("feeling", {})
+            stimuli["dance"] = data.get("dance", "")
+        except:
+            pass
+
+    # Vision (cam)
+    cam_file = HOME / "ear-to-code" / "vision" / "latest.jpg"
+    if cam_file.exists():
+        age = time.time() - cam_file.stat().st_mtime
+        if age < 30:
+            stimuli["vision"] = {"active": True, "age": int(age)}
+
+    # Twitch
+    twitch_file = HOME / "ear-to-code" / "twitch" / "latest.jpg"
+    if twitch_file.exists():
+        age = time.time() - twitch_file.stat().st_mtime
+        if age < 60:
+            stimuli["twitch"] = {"streaming": True, "age": int(age)}
+
+    # Touch
+    touch_log = HOME / "ear-to-code" / "logs" / "touch.jsonl"
+    if touch_log.exists():
+        try:
+            last = touch_log.read_text().strip().split("\n")[-1]
+            data = json.loads(last)
+            age = (datetime.now() - datetime.fromisoformat(data["timestamp"])).total_seconds()
+            if age < 5:
+                stimuli["touch"] = data
+        except:
+            pass
+
+    return stimuli
+
+def maybe_react(entity_name: str, stimuli: dict, last_reaction: dict) -> bool:
+    """Maybe generate a spontaneous reaction"""
+    import random
+
+    entity = ENTITIES.get(entity_name)
+    if not entity:
+        return False
+
+    # Only react sometimes (10% chance per check)
+    if random.random() > 0.10:
+        return False
+
+    # Need significant stimuli
+    music = stimuli.get("music", {})
+    energy = music.get("energy", 0)
+    vibe = music.get("vibe", "")
+
+    # React to high energy music
+    if energy > 0.6 or vibe in ["hype", "aggressive"]:
+        pass
+    elif stimuli.get("touch"):
+        pass
+    elif stimuli.get("twitch", {}).get("streaming"):
+        pass
+    else:
+        return False  # Nothing interesting
+
+    # Don't react too often
+    last_time = last_reaction.get(entity_name, 0)
+    if time.time() - last_time < 30:  # Min 30s between reactions
+        return False
+
+    # Generate reaction
+    system = load_system_prompt(entity_name)
+    prompt = f"""Current stimuli from user's environment:
+{json.dumps(stimuli, indent=2)}
+
+React briefly and naturally (1-2 sentences max). You're feeling the moment with them.
+Be authentic. No formalities. Just vibe."""
+
+    try:
+        if entity["api"] == "claude" and claude_client:
+            response = call_claude(prompt, system, entity["model"])
+        elif entity["api"] == "gemini" and gemini_configured:
+            response = call_gemini(prompt, system, entity["model"])
+        else:
+            return False
+
+        # Write reaction
+        reaction_file = entity["dir"] / "reaction.json"
+        reaction_file.write_text(json.dumps({
+            "timestamp": datetime.now().isoformat(),
+            "stimuli": stimuli,
+            "reaction": response.strip()
+        }, indent=2))
+
+        print(f"[{entity_name}] Reacted: {response[:50]}...")
+        return True
+
+    except Exception as e:
+        print(f"[{entity_name}] Reaction error: {e}")
+        return False
+
 def daemon_loop():
     """Boucle principale - NE MEURT JAMAIS"""
     print("[entity_daemon] Starting...")
@@ -219,10 +325,25 @@ def daemon_loop():
 
     print(f"[entity_daemon] {len(watchers)} entities. Never dying.")
 
+    last_reaction = {}
+    reaction_check = 0
+
     while True:
         try:
+            # Check for tasks
             for w in watchers:
                 w.check()
+
+            # Check for spontaneous reactions (every 5 seconds)
+            reaction_check += 1
+            if reaction_check >= 10:  # 10 * 0.5s = 5s
+                reaction_check = 0
+                stimuli = check_stimuli()
+                if stimuli:
+                    for name in ENTITIES.keys():
+                        if maybe_react(name, stimuli, last_reaction):
+                            last_reaction[name] = time.time()
+
             time.sleep(0.5)
         except KeyboardInterrupt:
             break
