@@ -1,73 +1,19 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 """
-flow langage sans ponctuation multisens
-chaque mot porte plusieurs sens
-on parse on devine on agit
+flow
 
-inspiré de go simplicité pas de bruit
+langage multisens
+tout caractère accepté
+utf8 natif
 
-toutes graphies acceptées
-toutes langues acceptées
-majuscules minuscules peu importe
-accents ou pas peu importe
-typos acceptées on devine
-unicode emoji tout passe
-
-français english español deutsch 日本語 العربية עברית
-ελληνικά русский 한국어 हिंदी ไทย
-
-credits go team pour la philosophie
+credits go
 """
 
 from pathlib import Path
 import json
-import unicodedata
 
 HOME = Path.home()
-
-
-def normalize(word):
-    """
-    normalise toutes graphies
-    accents ou pas
-    majuscules ou pas
-    unicode decomposé
-    """
-    # minuscules
-    w = word.lower()
-    # enlève accents
-    w = unicodedata.normalize('NFD', w)
-    w = ''.join(c for c in w if unicodedata.category(c) != 'Mn')
-    return w
-
-
-def fuzzy_match(word, known):
-    """
-    match approximatif
-    typos acceptées
-    """
-    w = normalize(word)
-
-    # match exact
-    if w in known:
-        return w
-
-    # match sans accents dans known
-    for k in known:
-        if normalize(k) == w:
-            return k
-
-    # match partiel si long
-    if len(w) >= 3:
-        for k in known:
-            nk = normalize(k)
-            if w in nk or nk in w:
-                return k
-            # levenshtein simple
-            if len(w) == len(nk) and sum(a != b for a, b in zip(w, nk)) <= 1:
-                return k
-
-    return None
 
 
 # mots clés multisens toutes langues toutes graphies
@@ -167,13 +113,12 @@ SENS = {
 
 def parse(text):
     """
-    parse flow en actions
-    retourne intentions multiples
-    toutes graphies acceptées
+    parse flow
+    utf8 natif tout passe
     """
-    # split par espaces et caractères
     tokens = []
     current = ""
+
     for c in text:
         if c.isspace():
             if current:
@@ -192,43 +137,29 @@ def parse(text):
     intentions = []
     context = []
 
-    for token in tokens:
-        # essaie match direct
-        if token in SENS:
-            intentions.append({
-                "mot": token,
-                "sens": SENS[token],
-                "contexte": list(context)
-            })
-            context.append(token)
-            continue
-
-        # essaie fuzzy match
-        matched = fuzzy_match(token, SENS.keys())
-        if matched:
-            intentions.append({
-                "mot": matched,
-                "original": token,
-                "sens": SENS[matched],
-                "contexte": list(context)
-            })
-            context.append(matched)
+    for t in tokens:
+        low = t.lower()
+        if t in SENS:
+            intentions.append({"m": t, "s": SENS[t], "c": list(context)})
+            context.append(t)
+        elif low in SENS:
+            intentions.append({"m": low, "s": SENS[low], "c": list(context)})
+            context.append(low)
         else:
-            # mot inconnu gardé en contexte
-            context.append(token)
+            context.append(t)
 
     return intentions
 
 def interpret(text):
     """
-    interprète flow en commande probable
+    interprète flow en commande
     """
     intentions = parse(text)
 
     if not intentions:
         return {"action": "observe", "data": text}
 
-    mots = [i["mot"] for i in intentions]
+    mots = [i["m"] for i in intentions]
 
     # patterns reconnus
     if "f" in mots and "loop" in mots:
