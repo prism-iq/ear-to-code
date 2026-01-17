@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 import threading
+from git_daemon import sync_now
 
 HOME = Path.home()
 
@@ -87,6 +88,14 @@ def debug_loop():
         except Exception as e:
             print(f"[ERROR] {e}")
             time.sleep(1)
+
+
+def commit_push():
+    """Appelable par tout le système"""
+    ok, msg = sync_now()
+    if ok:
+        print(f"[git] synced: {msg}")
+    return ok
 
 
 if __name__ == "__main__":
