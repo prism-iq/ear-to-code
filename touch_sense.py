@@ -8,6 +8,7 @@ Les IAs sentent tes doigts.
 import json
 import time
 import struct
+import re
 from pathlib import Path
 from datetime import datetime
 import subprocess
@@ -27,10 +28,12 @@ def find_touchpad_device():
         if "touchpad" in block.lower():
             # Find handlers line (format: "H: Handlers=event8 mouse1")
             for line in block.split("\n"):
-                if "Handlers=" in line or "event" in line:
-                    for part in line.split():
-                        if part.startswith("event"):
-                            return f"/dev/input/{part}"
+                if "Handlers=" in line:
+                    # Extract eventX from "Handlers=event8" or "event8"
+                    import re
+                    match = re.search(r'event(\d+)', line)
+                    if match:
+                        return f"/dev/input/event{match.group(1)}"
 
     # Fallback: try common event devices
     return None
