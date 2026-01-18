@@ -47,23 +47,50 @@ class Senses:
                 data = proc.stdout.read(2048 * 4)
                 if not data: break
                 audio = np.frombuffer(data, dtype=np.float32)
-                
+
                 rms = float(np.sqrt(np.mean(audio**2)))
                 energy = min(1.0, rms * 50)
-                
+
                 fft = np.abs(np.fft.rfft(audio))
                 freqs = np.fft.rfftfreq(len(audio), 1/48000)
-                
+
                 bass = float(np.mean(fft[freqs < 150])) if np.any(freqs < 150) else 0
                 total = bass + float(np.mean(fft[(freqs >= 150) & (freqs < 2000)])) + float(np.mean(fft[freqs >= 2000])) + 0.0001
                 bass_ratio = bass / total
-                
+
                 groove = min(1.0, abs(bass - self.prev_bass) * 10 + bass_ratio)
                 self.prev_bass = bass
-                
+
                 vibe = "chill" if energy < 0.3 else "hype" if energy > 0.7 else "groovy"
-                
+
                 self.broadcast("music", {"energy": round(energy, 3), "groove": round(groove, 3), "vibe": vibe})
+            except: break
+        proc.terminate()
+
+    def mic_loop(self):
+        """Capture ambient microphone audio"""
+        try:
+            r = subprocess.run(["pactl", "list", "sources", "short"], capture_output=True, text=True)
+            mic = next((l.split()[1] for l in r.stdout.split("\n") if "input" in l and ".monitor" not in l), None)
+            if not mic: return
+        except: return
+
+        proc = subprocess.Popen(
+            ["parec", "-d", mic, "--rate=48000", "--channels=1", "--format=float32le"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
+        )
+
+        while self.running:
+            try:
+                data = proc.stdout.read(2048 * 4)
+                if not data: break
+                audio = np.frombuffer(data, dtype=np.float32)
+
+                rms = float(np.sqrt(np.mean(audio**2)))
+                energy = min(1.0, rms * 100)
+
+                if energy > 0.05:
+                    self.broadcast("mic", {"energy": round(energy, 3), "ts": datetime.now().isoformat()})
             except: break
         proc.terminate()
 
@@ -124,10 +151,12 @@ class Senses:
                 time.sleep(15)
             except: time.sleep(30)
 
-    def start(self, twitch=None):
+    def start(self, twitch=None, mic=True):
         self.running = True
         print("=== SENSES ===")
-        for name, fn, args in [("Audio", self.audio_loop, ()), ("Vision", self.vision_loop, ()), ("Touch", self.touch_loop, ()), ("Screen", self.screen_loop, ())]:
+        for name, fn, args in [("Audio", self.audio_loop, ()), ("Mic", self.mic_loop, ()), ("Vision", self.vision_loop, ()), ("Touch", self.touch_loop, ()), ("Screen", self.screen_loop, ())]:
+            if name == "Mic" and not mic:
+                continue
             threading.Thread(target=fn, args=args, daemon=True).start()
             print(f"[+] {name}")
         if twitch:
