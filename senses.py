@@ -12,10 +12,11 @@ from datetime import datetime
 os.environ["PYTHONWARNINGS"] = "ignore"
 
 HOME = Path.home()
-BASE = HOME / "ear-to-code"
+PROJECTS = HOME / "projects"
+BASE = PROJECTS / "ear-to-code"
 LOGS = BASE / "logs"
 LOGS.mkdir(parents=True, exist_ok=True)
-ENTITIES = ["nyx-v2", "cipher", "flow-phoenix"]
+ENTITIES = [PROJECTS / "nyx", PROJECTS / "cipher", PROJECTS / "geass"]
 
 class Senses:
     def __init__(self):
@@ -27,13 +28,19 @@ class Senses:
     def broadcast(self, sense, data):
         for e in ENTITIES:
             try:
-                (HOME / e / f"{sense}.json").write_text(json.dumps(data))
+                (e / f"{sense}.json").write_text(json.dumps(data))
             except: pass
 
     def audio_loop(self):
         try:
             r = subprocess.run(["pactl", "list", "sources", "short"], capture_output=True, text=True)
-            monitor = next((l.split()[1] for l in r.stdout.split("\n") if ".monitor" in l), None)
+            lines = r.stdout.split("\n")
+            # Priorité : easyeffects > ZenGo > autre monitor
+            monitor = next((l.split()[1] for l in lines if "easyeffects" in l and ".monitor" in l), None)
+            if not monitor:
+                monitor = next((l.split()[1] for l in lines if "ZenGo" in l and ".monitor" in l), None)
+            if not monitor:
+                monitor = next((l.split()[1] for l in lines if ".monitor" in l), None)
             if not monitor: return
         except: return
 
@@ -71,7 +78,13 @@ class Senses:
         """Capture ambient microphone audio"""
         try:
             r = subprocess.run(["pactl", "list", "sources", "short"], capture_output=True, text=True)
-            mic = next((l.split()[1] for l in r.stdout.split("\n") if "input" in l and ".monitor" not in l), None)
+            lines = r.stdout.split("\n")
+            # Priorité : USB Streaming Mic > Mic1 interne > autre input
+            mic = next((l.split()[1] for l in lines if "Streaming_Mic" in l), None)
+            if not mic:
+                mic = next((l.split()[1] for l in lines if "Mic1" in l), None)
+            if not mic:
+                mic = next((l.split()[1] for l in lines if "input" in l and ".monitor" not in l), None)
             if not mic: return
         except: return
 
@@ -132,9 +145,11 @@ class Senses:
 
     def screen_loop(self):
         d = BASE / "vision"
+        d.mkdir(exist_ok=True)
         while self.running:
             try:
-                subprocess.run(["scrot", "-o", str(d / "screen.png")], timeout=5, capture_output=True, env={**os.environ, "DISPLAY": ":1"})
+                subprocess.run(["grim", str(d / "screen.png")], timeout=5, capture_output=True)
+                self.broadcast("screen", {"path": str(d / "screen.png"), "ts": datetime.now().isoformat()})
                 time.sleep(10)
             except: time.sleep(10)
 
